@@ -1,0 +1,69 @@
+import pandas as pd
+import numpy as np
+import random
+from datetime import datetime, timedelta
+
+# ----------------------------
+# Configs
+# ----------------------------
+NUM_SHUTTLE_ROWS = 3_750_000   # ~300MB for shuttle_trips.csv
+NUM_EVENT_ROWS = 3_000_000     # ~300MB for event_metadata.csv
+
+STOPS = ['RAC', 'Admin Dr', 'Main Library', 'Engineering Bldg', 'Commons', 'UC', 'PAHB', 'Physics']
+EVENT_TYPES = ['Career Fair', 'Hackathon', 'Sports Event', 'Commencement', 'None']
+BUILDINGS = ['Commons', 'UC', 'Stadium', 'PAHB', 'Library']
+DAYS = pd.date_range(start="2024-08-26", periods=90, freq='D')
+
+# ----------------------------
+# Generate Shuttle Trips
+# ----------------------------
+def generate_shuttle_trips(n=NUM_SHUTTLE_ROWS):
+    data = []
+    for _ in range(n):
+        date = random.choice(DAYS)
+        hour = random.choice(range(7, 23))
+        time = datetime(date.year, date.month, date.day, hour, random.randint(0, 59))
+        stop = random.choice(STOPS)
+        riders = np.random.poisson(lam=random.randint(15, 45))
+        event = random.choices(EVENT_TYPES, weights=[0.1, 0.1, 0.1, 0.05, 0.65])[0]
+        data.append([time, stop, riders, event])
+    df = pd.DataFrame(data, columns=["timestamp", "stop", "rider_count", "event_type"])
+    df.to_csv("shuttle_trips_300MB.csv", index=False)
+    print("✅ shuttle_trips_300MB.csv saved")
+
+# ----------------------------
+# Generate Event Metadata
+# ----------------------------
+def generate_event_metadata(n=NUM_EVENT_ROWS):
+    data = []
+    for _ in range(n):
+        date = random.choice(DAYS)
+        start_time = datetime.combine(date, datetime.min.time()) + timedelta(hours=random.randint(8, 20))
+        building = random.choice(BUILDINGS)
+        event = random.choice(EVENT_TYPES[:-1])  # exclude "None"
+        data.append([event, building, start_time])
+    df = pd.DataFrame(data, columns=["event_name", "building", "event_start_time"])
+    df.to_csv("event_metadata_300MB.csv", index=False)
+    print("✅ event_metadata_300MB.csv saved")
+
+# ----------------------------
+# Generate GeoCoordinates (small)
+# ----------------------------
+def generate_stop_coordinates():
+    base_lat, base_lon = 39.255, -76.710  # UMBC approx.
+    geo_data = []
+    for stop in STOPS:
+        lat_offset = random.uniform(-0.002, 0.002)
+        lon_offset = random.uniform(-0.002, 0.002)
+        geo_data.append([stop, base_lat + lat_offset, base_lon + lon_offset])
+    df = pd.DataFrame(geo_data, columns=["stop", "latitude", "longitude"])
+    df.to_csv("stop_coordinates.csv", index=False)
+    print("✅ stop_coordinates.csv saved")
+
+# ----------------------------
+# Run All Generators
+# ----------------------------
+# Uncomment below to run:
+# generate_shuttle_trips()
+# generate_event_metadata()
+# generate_stop_coordinates()
